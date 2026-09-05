@@ -1,0 +1,5 @@
+version: "1.0"
+description: Matter PM Test Sensor
+dependencies:
+  espressif/esp_matter:
+    version: ">=1.4.0"
