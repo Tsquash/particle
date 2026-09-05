@@ -94,11 +94,11 @@ void update_pm(pm data) {
     display.print("PM 10");
     display.setFont(&bold25);
     display.setCursor(32, 74);
-    display.print((int)roundf(data.pm1));
+    display.print(min(999, (int)roundf(data.pm1))); // Preserve the three-digit display limit.
     display.setCursor(32, 155);
-    display.print((int)roundf(data.pm2_5));
+    display.print(min(999, (int)roundf(data.pm2_5)));
     display.setCursor(32, 235);
-    display.print((int)roundf(data.pm10));
+    display.print(min(999, (int)roundf(data.pm10)));
     // display the pm quality indicators
     _draw_quality_indicator(1, (int)roundf(data.pm1));
     _draw_quality_indicator(2, (int)roundf(data.pm2_5));
@@ -127,5 +127,15 @@ void display_obstructed(){
     display.fillScreen(GxEPD_WHITE);
     display.drawBitmap(0,0, obstructed_bitmap, 122, 250, GxEPD_BLACK);
     display.display(true);
+    current_partial = 0;
+}
+void display_status(const char *message) {
+    display.setFullWindow();
+    display.fillScreen(GxEPD_WHITE);
+    display.setTextColor(GxEPD_BLACK);
+    display.setFont(&regular12);
+    display.setCursor(4, 85);
+    display.print(message);
+    display.display(false);
     current_partial = 0;
 }

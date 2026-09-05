@@ -1,0 +1,15 @@
+#pragma once
+#include <stdint.h>
+
+// Same wire format in both projects. ESP32-C6 is little endian.
+struct PMReading {
+    uint16_t pm1;
+    uint16_t pm25;
+    uint16_t pm10;
+};
+static_assert(sizeof(PMReading) == 6);
+
+// One service, one characteristic: PM notifies readings; AQM writes milliseconds
+// until the next :40 measurement. UINT32_MAX means pairing only (RTC not ready).
+#define PM_SERVICE_UUID BLE_UUID128_INIT(0x91,0x25,0x61,0x90,0x44,0x6a,0x41,0xbb,0x89,0x73,0xc1,0xd6,0x01,0x00,0x50,0x4d)
+#define PM_VALUE_UUID   BLE_UUID128_INIT(0x91,0x25,0x61,0x90,0x44,0x6a,0x41,0xbb,0x89,0x73,0xc1,0xd6,0x02,0x00,0x50,0x4d)

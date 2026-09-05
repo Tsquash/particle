@@ -4,6 +4,8 @@
 SparkFunBMV080SPI sensor;
 
 bool initialize_sensor() {
+    // Close a previous failed attempt before reopening the Bosch driver.
+    sensor.close();
     pinMode(PM_CS, OUTPUT);
     digitalWrite(PM_CS, HIGH);
 
@@ -11,10 +13,12 @@ bool initialize_sensor() {
         return false;
     }
 
-    if (sensor.begin(PM_CS, epd_spi) == false) {
+    static bool busReady = false;
+    if (!busReady && sensor.begin(PM_CS, epd_spi) == false) {
         Serial.println("PM sensor SPI init failure. Check your jumpers and the hookup guide.");
         return false;
     }
+    busReady = true;
     Serial.println("BMV080 SPI init successful");
 
     /* Initialize the Sensor (read driver, open, reset, id etc.)*/
@@ -38,37 +42,22 @@ bool initialize_sensor() {
 }
 
 bool read_pm(pm &data) {
-    if(sensor.readSensor())
-    {
-        float pm2_5 = sensor.PM25();
-        float pm1 = sensor.PM1();
-        float pm10 = sensor.PM10();
-
-        // Display only has room for 3 digits before the decimal point.
-        data.pm2_5 = pm2_5 > 999.0f ? 999.0f : pm2_5;
-        data.pm1 = pm1 > 999.0f ? 999.0f : pm1;
-        data.pm10 = pm10 > 999.0f ? 999.0f : pm10;
-
-        Serial.printf("PM1: %.2f\n", data.pm1);
-        Serial.printf("PM2.5: %.2f\n", data.pm2_5);
-        Serial.printf("PM10: %.2f\n", data.pm10);
-
-        if(sensor.isObstructed())
-        {
-            data.obstructed = true;
-            Serial.print("\tObstructed");
-        }
-        else
-        {
-            data.obstructed = false;
-        }
-
-        Serial.println();
-        return true;
-    }
-    else return false;
+    bmv080_output_t output{};
+    if (!sensor.readSensor(&output)) return false; // No new output yet.
+    data.pm1 = output.pm1_mass_concentration;
+    data.pm2_5 = output.pm2_5_mass_concentration;
+    data.pm10 = output.pm10_mass_concentration;
+    data.obstructed = output.is_obstructed;
+    data.invalid = output.is_outside_measurement_range ||
+                   !isfinite(data.pm1) || !isfinite(data.pm2_5) || !isfinite(data.pm10) ||
+                   data.pm1 < 0 || data.pm2_5 < 0 || data.pm10 < 0 ||
+                   data.pm1 > 1000 || data.pm2_5 > 1000 || data.pm10 > 1000;
+    return true;
 }
 
-bool read_outdoor_pm(pm &outdoor_data){
-    
+bool read_outdoor_pm(pm &outdoor_data) {
+    return false;
 }
+
+bool pause_sensor() { return sensor.stopMeasurement(); }
+bool resume_sensor() { return sensor.setMode(SF_BMV080_MODE_CONTINUOUS); }

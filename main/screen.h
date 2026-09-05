@@ -5,6 +5,7 @@
 
 bool initialize_display();
 void display_config();
+void display_status(const char *message);
 void display_obstructed();
 void update_pm(pm data);
 
