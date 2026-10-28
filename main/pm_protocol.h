@@ -9,7 +9,16 @@ struct PMReading {
 };
 static_assert(sizeof(PMReading) == 6);
 
-// One service, one characteristic: PM notifies readings; AQM writes milliseconds
-// until the next :40 measurement. UINT32_MAX means pairing only (RTC not ready).
+// One service, one characteristic: PM notifies readings; AQM writes timing
+// information until the next :40 measurement. UINT32_MAX means pairing only
+// (RTC not ready).
+struct __attribute__((packed)) PMTiming {
+    uint32_t untilMeasurement;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+};
+static_assert(sizeof(PMTiming) == 7);
+
 #define PM_SERVICE_UUID BLE_UUID128_INIT(0x91,0x25,0x61,0x90,0x44,0x6a,0x41,0xbb,0x89,0x73,0xc1,0xd6,0x01,0x00,0x50,0x4d)
 #define PM_VALUE_UUID   BLE_UUID128_INIT(0x91,0x25,0x61,0x90,0x44,0x6a,0x41,0xbb,0x89,0x73,0xc1,0xd6,0x02,0x00,0x50,0x4d)

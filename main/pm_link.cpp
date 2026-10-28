@@ -18,18 +18,20 @@ static uint16_t valueHandle;
 static bool enabled = false;
 static QueueHandle_t timingQueue;
 static uint32_t nextMeasurement = 0;
+static std::atomic<uint32_t> timingSyncMillis{0};
+static std::atomic<uint8_t> timingMinute{0}, timingSecond{0};
 
 static bool samePeer(const ble_addr_t &a, const ble_addr_t &b) {
     return a.type == b.type && memcmp(a.val, b.val, 6) == 0;
 }
 
 static int accessValue(uint16_t conn, uint16_t, ble_gatt_access_ctxt *ctxt, void *) {
-    uint32_t untilMeasurement;
+    PMTiming timing;
     ble_gap_conn_desc desc;
     if (ctxt->op != BLE_GATT_ACCESS_OP_WRITE_CHR ||
-        OS_MBUF_PKTLEN(ctxt->om) != sizeof(untilMeasurement) ||
-        ble_hs_mbuf_to_flat(ctxt->om, &untilMeasurement, sizeof(untilMeasurement), nullptr) != 0 ||
-        (untilMeasurement != UINT32_MAX && untilMeasurement > 60000) ||
+        OS_MBUF_PKTLEN(ctxt->om) != sizeof(timing) ||
+        ble_hs_mbuf_to_flat(ctxt->om, &timing, sizeof(timing), nullptr) != 0 ||
+        (timing.untilMeasurement != UINT32_MAX && timing.untilMeasurement > 60000) ||
         ble_gap_conn_find(conn, &desc) != 0)
         return BLE_ATT_ERR_UNLIKELY;
     if (!pairing && (!paired || !samePeer(desc.peer_id_addr, savedPeer)))
@@ -45,10 +47,15 @@ static int accessValue(uint16_t conn, uint16_t, ble_gatt_access_ctxt *ctxt, void
         pairing = false;
         Serial.println("[BLE] AQM link saved in NVS");
     }
-    if (untilMeasurement != UINT32_MAX) {
-        uint32_t deadline = millis() + untilMeasurement;
+    if (timing.untilMeasurement != UINT32_MAX) {
+        uint32_t deadline = millis() + timing.untilMeasurement;
         xQueueOverwrite(timingQueue, &deadline);
-        Serial.printf("[BLE] Next measurement in %lu ms\n", (unsigned long)untilMeasurement);
+        timingMinute = timing.minute;
+        timingSecond = timing.second;
+        timingSyncMillis = millis();
+        Serial.printf("[BLE] AQM time %02u:%02u:%02u; next measurement in %lu ms\n",
+                      timing.hour, timing.minute, timing.second,
+                      (unsigned long)timing.untilMeasurement);
     }
     return 0;
 }
@@ -97,7 +104,9 @@ bool initializePMLink(bool forcePair) {
     pairing = forcePair || (!paired && !attempted);
     if (pairing) nvs.putBool("attempted", true);
     nvs.end();
-    nextMeasurement = millis();
+    // Standalone operation waits for a complete first averaging window. A paired
+    // AQM will overwrite this deadline with its next second-40 target.
+    nextMeasurement = millis() + 60000;
     if (!paired && !pairing) {
         Serial.println("[BLE] Standalone; radio not started");
         return false;
@@ -160,6 +169,14 @@ void finishPMPairing() {
 }
 
 bool pmLinkPaired() { return paired; }
+
+bool pmLinkFullRefreshDue() {
+    const uint32_t sync = timingSyncMillis.load();
+    if (!paired || !sync) return false;
+    const uint32_t elapsedSeconds = (millis() - sync) / 1000;
+    const uint8_t minute = (timingMinute.load() + (timingSecond.load() + elapsedSeconds) / 60) % 60;
+    return minute == 0 || minute == 30;
+}
 
 bool pmMeasurementDue() {
     uint32_t deadline;

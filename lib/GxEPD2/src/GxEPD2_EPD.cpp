@@ -175,6 +175,17 @@ void GxEPD2_EPD::_waitWhileBusy(const char* comment, uint16_t busy_time)
     }
     (void) start;
   }
+  else if (_busy_callback)
+  {
+    // With no BUSY pin, keep the fixed controller wait but allow other devices
+    // on the shared SPI bus to be serviced between display transactions.
+    unsigned long start = millis();
+    while (millis() - start < busy_time)
+    {
+      _busy_callback(_busy_callback_parameter);
+      delay(1);
+    }
+  }
   else delay(busy_time);
 }
 

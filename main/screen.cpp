@@ -9,6 +9,7 @@
 #include "font/bold25.h"
 #include "font/regular12.h"
 #include "bitmaps.h"
+#include "pm_link.h"
 
 #define GxEPD2_DISPLAY_CLASS GxEPD2_BW
 #define GxEPD2_DRIVER_CLASS GxEPD2_213_GDEY0213B74 // GDEY0213B74 250x122, SSD1680
@@ -24,6 +25,11 @@ GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, MAX_HEIGHT(GxEPD2_DRIVER_CLASS)> displ
 void _draw_quality_indicator(int pos, int pm_val);
 
 int current_partial = 1;
+static void (*display_wait_callback)() = nullptr;
+
+static void service_during_display_wait(const void *) {
+    if (display_wait_callback) display_wait_callback();
+}
 
 bool initialize_spi_bus() {
     static bool spi_initialized = false;
@@ -42,14 +48,6 @@ bool initialize_spi_bus() {
 }
 
 bool initialize_display() {
-    // initialize the pins used
-    /*
-    pinMode(EPD_CS, OUTPUT);
-    pinMode(EPD_DC, OUTPUT);
-    pinMode(EPD_RESET, OUTPUT);
-    pinMode(EPD_BUSY, INPUT);
-    */
-    // initialize the display
     if (!initialize_spi_bus()) {
         return false;
     }
@@ -66,9 +64,9 @@ bool initialize_display() {
     return true;
 }
 
-void display_config() {
-    // display what settings are set or what can be changed with buttons
-    return;
+void set_display_wait_callback(void (*callback)()) {
+    display_wait_callback = callback;
+    display.epd2.setBusyCallback(service_during_display_wait);
 }
 
 void update_pm(pm data) {
@@ -78,7 +76,8 @@ void update_pm(pm data) {
     // 3. display the three PM values
     display.setFullWindow();
     display.fillScreen(GxEPD_WHITE);
-    bool doFull = (current_partial % PARTIALS_PER_FULL) == 0;
+    bool doFull = pmLinkFullRefreshDue() ||
+                  (current_partial % PARTIALS_PER_FULL) == 0;
     if(doFull){
         // logic fixes ghosting by blanking the screen white when
         // its time for a full refresh
@@ -129,13 +128,40 @@ void display_obstructed(){
     display.display(true);
     current_partial = 0;
 }
-void display_status(const char *message) {
+void display_status(DisplayStatus status) {
     display.setFullWindow();
     display.fillScreen(GxEPD_WHITE);
     display.setTextColor(GxEPD_BLACK);
     display.setFont(&regular12);
-    display.setCursor(4, 85);
-    display.print(message);
+    // 122 x 250
+    auto print_centered = [](const char* text, int16_t y) {
+        int16_t text_x, text_y;
+        uint16_t text_width, text_height;
+        display.getTextBounds(text, 0, y, &text_x, &text_y, &text_width, &text_height);
+        display.setCursor((display.width() - text_width) / 2 - text_x, y);
+        display.print(text);
+    };
+    switch (status) {
+        case DisplayStatus::Pairing:
+            display.drawBitmap(29, 50, pairing_bitmap, PAIRING_WIDTH, PAIRING_HEIGHT, GxEPD_BLACK);
+            print_centered("Pairing", 135);
+            print_centered("with AQM", 163);
+            break;
+        case DisplayStatus::Paired:
+            display.drawBitmap(29, 50, paired_bitmap, PAIRING_WIDTH, PAIRING_HEIGHT, GxEPD_BLACK);
+            print_centered("Pairing", 135);
+            print_centered("Successful", 163);
+            break;
+        case DisplayStatus::TimedOut:
+            display.drawBitmap(29, 50, pairing_bitmap, PAIRING_WIDTH, PAIRING_HEIGHT, GxEPD_BLACK);
+            print_centered("Pairing", 135);
+            print_centered("Timed Out", 163);
+            break;
+        case DisplayStatus::SensorFailure:
+            print_centered("Sensor", 117);
+            print_centered("Failure", 145);
+            break;
+    }
     display.display(false);
     current_partial = 0;
 }

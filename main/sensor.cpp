@@ -14,7 +14,8 @@ bool initialize_sensor() {
     }
 
     static bool busReady = false;
-    if (!busReady && sensor.begin(PM_CS, epd_spi) == false) {
+    if (!busReady && sensor.begin(PM_CS, epd_spi,
+                                  SPISettings(3000000, MSBFIRST, SPI_MODE0)) == false) {
         Serial.println("PM sensor SPI init failure. Check your jumpers and the hookup guide.");
         return false;
     }
@@ -58,6 +59,3 @@ bool read_pm(pm &data) {
 bool read_outdoor_pm(pm &outdoor_data) {
     return false;
 }
-
-bool pause_sensor() { return sensor.stopMeasurement(); }
-bool resume_sensor() { return sensor.setMode(SF_BMV080_MODE_CONTINUOUS); }
