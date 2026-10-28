@@ -30,9 +30,9 @@ boot makes one automatic attempt to pair with an AQM; the attempt ends after
 2 minutes have elapsed, then the device runs standalone until pairing is explicitly
 requested again with the pairing button or a factory reset.
 
-Note! Device takes up to 30 seconds from seeing the **particle** or **Pairing Successful** 
-screen to transition into displaying values on the EPD. This is due to the sensor having an 
-initialization period.
+Note! Device takes a full minute from seeing the **particle**, **Pairing Successful**,
+or **Pairing Timed Out** screen to transition into displaying values on the EPD. This
+is due to the sensor having an initialization period.
 
 
 ### Linked to an AQM
