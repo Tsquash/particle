@@ -30,6 +30,11 @@ boot makes one automatic attempt to pair with an AQM; the attempt ends after
 2 minutes have elapsed, then the device runs standalone until pairing is explicitly
 requested again with the pairing button or a factory reset.
 
+Note! Device takes up to 30 seconds from seeing the **particle** or **Pairing Successful** 
+screen to transition into displaying values on the EPD. This is due to the sensor having an 
+initialization period.
+
+
 ### Linked to an AQM
 
 The PM sensor pairs with the companion Matter AQM over BLE. The AQM supplies
@@ -48,8 +53,9 @@ mode; hold the pairing button for one second during a later boot to try again.
 
 ## Buttons
 
-Both buttons are checked at boot. Hold the button
-continuously for at least one second to invoke its action.
+Both buttons are checked at boot. Hold the pairing button
+for at least one second to enter AQM pairing mode. Hold the 
+factory reset for at least one second, then release, to factory reset.
 
 | Button | Location | GPIO | Action |
 | --- | --- |---: | --- |
