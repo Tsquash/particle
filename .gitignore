@@ -5,3 +5,9 @@ managed_components
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# KiCad backups and machine-local generated files
+KICAD/particle-backups/
+*.kicad_*-bak
+*.kicad_prl
+fp-info-cache
