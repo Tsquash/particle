@@ -5,6 +5,7 @@ bool initializePMLink(bool forcePair); // returns whether to show the pairing sc
 void processPMLink();
 void finishPMPairing();
 bool pmLinkPaired();
+bool pmLinkTimeSynchronized();
 bool pmLinkFullRefreshDue();
 bool pmMeasurementDue();
 void sendPMReading(const PMReading &reading);

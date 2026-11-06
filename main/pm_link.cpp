@@ -14,6 +14,7 @@ static const ble_uuid128_t valueUUID = PM_VALUE_UUID;
 static ble_addr_t savedPeer{};
 static std::atomic<bool> paired{false}, pairing{false}, subscribed{false};
 static std::atomic<uint16_t> connection{BLE_HS_CONN_HANDLE_NONE};
+static std::atomic<bool> timingSynchronized{false};
 static uint16_t valueHandle;
 static bool enabled = false;
 static QueueHandle_t timingQueue;
@@ -53,6 +54,7 @@ static int accessValue(uint16_t conn, uint16_t, ble_gatt_access_ctxt *ctxt, void
         timingMinute = timing.minute;
         timingSecond = timing.second;
         timingSyncMillis = millis();
+        timingSynchronized = true;
         Serial.printf("[BLE] AQM time %02u:%02u:%02u; next measurement in %lu ms\n",
                       timing.hour, timing.minute, timing.second,
                       (unsigned long)timing.untilMeasurement);
@@ -170,9 +172,11 @@ void finishPMPairing() {
 
 bool pmLinkPaired() { return paired; }
 
+bool pmLinkTimeSynchronized() { return timingSynchronized; }
+
 bool pmLinkFullRefreshDue() {
+    if (!timingSynchronized) return false;
     const uint32_t sync = timingSyncMillis.load();
-    if (!paired || !sync) return false;
     const uint32_t elapsedSeconds = (millis() - sync) / 1000;
     const uint8_t minute = (timingMinute.load() + (timingSecond.load() + elapsedSeconds) / 60) % 60;
     return minute == 0 || minute == 30;

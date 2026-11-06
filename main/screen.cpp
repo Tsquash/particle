@@ -76,8 +76,9 @@ void update_pm(pm data) {
     // 3. display the three PM values
     display.setFullWindow();
     display.fillScreen(GxEPD_WHITE);
-    bool doFull = pmLinkFullRefreshDue() ||
-                  (current_partial % PARTIALS_PER_FULL) == 0;
+    bool doFull = pmLinkTimeSynchronized()
+                      ? pmLinkFullRefreshDue()
+                      : (current_partial % PARTIALS_PER_FULL) == 0;
     if(doFull){
         // logic fixes ghosting by blanking the screen white when
         // its time for a full refresh

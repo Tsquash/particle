@@ -150,6 +150,20 @@ void loop() {
             update_pm(averaged);
         } else if (fullyObstructed) {
             display_obstructed();
+            // Wait for one valid sample and show it on the display (not averaged).
+            while (true) {
+                pm data{};
+                lastSensorService = millis();
+                if (read_pm(data)) {
+                    lastOutput = millis();
+                    addSample(data);
+                    if (!data.obstructed && !data.invalid) {
+                        update_pm(data);
+                        break;
+                    }
+                }
+                delay(500);
+            }
         } else {
             Serial.printf("[PM] Only %u/%u valid samples this minute; need %u, no update sent\n",
                           sampleCount, totalCount, MIN_SAMPLES_PER_AVERAGE);
