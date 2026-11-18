@@ -2,7 +2,7 @@
 
 particle is an ESP32C6 based particulate matter sensor. It measures PM1.0,
 PM2.5, and PM10, displays the latest measurements locally via an e-paper display, and can send them to
-a paired [AQM](https://github.com/Tsquash/AirQualityMonitor) (air quality monitor) over Bluetooth Low Energy (BLE).
+a paired [AQM](https://github.com/Tsquash/AirQualityMonitor) (air quality monitor) over Bluetooth Low Energy (BLE) for smart home integration.
 The AQM is a Matter connected device, so the particle acts as its PM sensor
 peripheral and does not commission itself as a separate Matter device.
 
