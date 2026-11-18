@@ -57,10 +57,7 @@ bool initialize_display() {
     display.fillScreen(GxEPD_WHITE);
     display.display(false);
     // Show logo bitmap
-    display.setFullWindow();
-    display.fillScreen(GxEPD_WHITE);
-    display.drawBitmap(12, 60, logo_bitmap, LOGO_WIDTH, LOGO_HEIGHT, GxEPD_BLACK);
-    display.display(true);
+    display_logo();
     return true;
 }
 
@@ -129,6 +126,15 @@ void display_obstructed(){
     display.display(true);
     current_partial = 0;
 }
+
+void display_logo() {
+    display.setFullWindow();
+    display.fillScreen(GxEPD_WHITE);
+    display.drawBitmap(12, 60, logo_bitmap, LOGO_WIDTH, LOGO_HEIGHT, GxEPD_BLACK);
+    display.display(true);
+    current_partial = 0;
+}
+
 void display_status(DisplayStatus status) {
     display.setFullWindow();
     display.fillScreen(GxEPD_WHITE);

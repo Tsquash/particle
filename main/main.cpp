@@ -95,6 +95,9 @@ void setup() {
         finishPMPairing();
         display_status(pmLinkPaired() ? DisplayStatus::Paired : DisplayStatus::TimedOut);
         delay(4000);
+        // Keep the logo visible while the PM sensor completes its first
+        // one-minute sampling window.
+        display_logo();
     }
     sensorReady = initialize_sensor();
     lastSensorAttempt = millis();
